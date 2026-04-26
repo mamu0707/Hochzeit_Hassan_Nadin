@@ -314,44 +314,26 @@
     }, { threshold: 0.12 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // ── Route: Safari-kompatibler Maps-Aufruf ──
+    // ── Route: universell für Safari iPhone, Chrome Android, Desktop ──
     function openRoute(e) {
         e.preventDefault();
 
-        var DEST = 'Spichernstra%C3%9Fe+24%2C+10777+Berlin';
-        var BASE = 'https://www.google.com/maps/dir/?api=1&destination=' + DEST + '&travelmode=driving';
+        var DEST_ENCODED = 'Spichernstra%C3%9Fe+24%2C+10777+Berlin';
+        var GOOGLE_URL   = 'https://www.google.com/maps/dir/?api=1&destination=' + DEST_ENCODED + '&travelmode=driving';
+        var APPLE_URL    = 'https://maps.apple.com/?daddr=Spichernstra%C3%9Fe+24,+10777+Berlin&dirflg=d';
 
-        if (!navigator.geolocation) {
-            // Kein Geolocation-Support → direkt öffnen
-            window.open(BASE, '_blank');
-            return;
+        var ua = navigator.userAgent || '';
+        var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        var isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+
+        if (isIOS || isSafari) {
+            // iPhone / iPad / Safari → Apple Maps öffnen (funktioniert immer,
+            // keine Popup-Blockierung, öffnet direkt die Maps App)
+            window.location.href = APPLE_URL;
+        } else {
+            // Android Chrome, Desktop, Samsung Browser → Google Maps
+            window.open(GOOGLE_URL, '_blank');
         }
-
-        // Safari-Fix: window.open() MUSS synchron im selben User-Tap passieren.
-        // Daher Tab sofort leer öffnen, URL dann nachträglich setzen sobald
-        // Geolocation geantwortet hat.
-        var mapsTab = window.open('about:blank', '_blank');
-
-        navigator.geolocation.getCurrentPosition(
-            function(pos) {
-                var origin = pos.coords.latitude + ',' + pos.coords.longitude;
-                var url = BASE + '&origin=' + origin;
-                if (mapsTab && !mapsTab.closed) {
-                    mapsTab.location.href = url;
-                } else {
-                    window.open(url, '_blank');
-                }
-            },
-            function() {
-                // Standort verweigert oder Timeout → nur Ziel setzen
-                if (mapsTab && !mapsTab.closed) {
-                    mapsTab.location.href = BASE;
-                } else {
-                    window.open(BASE, '_blank');
-                }
-            },
-            { timeout: 6000, maximumAge: 60000 }
-        );
     }
 </script>
 </body>
